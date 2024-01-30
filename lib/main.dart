@@ -80,7 +80,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 icon: Image.asset('assets/images/turn_around.png',
                     width: 50, height: 50),
                 onPressed: () {
-                  // 화면 전환 코드
+                  CameraScreen.of(context)?.switchCamera();
                 },
               ),
             ],

@@ -8,29 +8,46 @@ class CameraScreen extends StatefulWidget {
 
   @override
   _CameraScreenState createState() => _CameraScreenState();
+
+  static of(BuildContext context) {}
 }
 
 class _CameraScreenState extends State<CameraScreen> {
-  CameraController? _controller;
-  late Future<void> _initializeControllerFuture;
+  CameraController? controller;
+  late Future<void> _initializeControllerFuture; // 카메라 컨트롤러 초기화
+  late List<CameraDescription> _availableCameras; // 사용 가능한 카메라 목록
 
   @override
   void initState() {
     super.initState();
-    _initializeControllerFuture = _initializeCamera();
+    _initializeCamera();
   }
 
-  // Initialize camera with desired camera and resolution settings
   Future<void> _initializeCamera() async {
-    final cameras = await availableCameras();
-    final firstCamera = cameras.first;
+    _availableCameras = await availableCameras();
+    final firstCamera = _availableCameras.first;
 
     _controller = CameraController(
       firstCamera,
       ResolutionPreset.medium,
     );
 
-    await _controller!.initialize();
+    _initializeControllerFuture = _controller!.initialize();
+  }
+
+  Future<void> _switchCamera() async {
+    if (_controller != null) {
+      final currentCameraDescription = _controller!.description;
+      final newCameraDescription = _availableCameras.firstWhere(
+            (camera) => camera.lensDirection != currentCameraDescription.lensDirection,
+      );
+
+      await _controller!.dispose();
+      _controller = CameraController(newCameraDescription, ResolutionPreset.medium);
+      _initializeControllerFuture = _controller!.initialize();
+
+      setState(() {});
+    }
   }
 
   @override
