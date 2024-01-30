@@ -13,7 +13,7 @@ class CameraScreen extends StatefulWidget {
 }
 
 class _CameraScreenState extends State<CameraScreen> {
-  CameraController? controller;
+  CameraController? _controller;
   late Future<void> _initializeControllerFuture; // 카메라 컨트롤러 초기화
   late List<CameraDescription> _availableCameras; // 사용 가능한 카메라 목록
 
