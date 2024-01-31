@@ -2,13 +2,18 @@
 // import 'dart:io';
 // import 'camera.dart';
 
+import 'package:camera/camera.dart';
 import "package:practice_flutter/camera_screen.dart";
 import 'package:flutter/material.dart';
+
 // flutter pub add camera
 // import 'package:practice_flutter/camera.dart';
 
+late final List<CameraDescription> _availableCameras; // 사용 가능한 카메라 목록
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  _availableCameras = await availableCameras();
   runApp(MyApp());
 }
 
@@ -31,6 +36,73 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  late CameraController _controller;
+  late Future<void> _initializeControllerFuture;
+  bool isFront = false;
+
+  Future<void> setCamera(bool isFront) async {
+    _controller = CameraController(
+        isFront ? _availableCameras.last : _availableCameras.first,
+        ResolutionPreset.max,
+        enableAudio: false);
+    try {
+      _initializeControllerFuture =  _controller.initialize();
+    } catch (e) {
+      print("CameraController Error: $e");
+      // 초기화 오류 처리
+      return;
+    }
+
+    // 카메라가 작동되지 않을 경우
+    if (!this.mounted) {
+      print("이니셜라이즈 실패");
+      return;
+    }
+
+    // 카메라가 작동될 경우
+    setState(() {
+      // 컨트롤러가 초기화된 후 실행할 코드
+    });
+
+    /*_controller!.initialize().then((_) {
+      // 카메라가 작동되지 않을 경우
+      if (!this.mounted) {
+        print("이니셜라이즈 실패");
+        return;
+      }
+      // 카메라가 작동될 경우
+      setState(() {
+        // 코드 작성
+      });
+    })
+    // 카메라 오류 시
+        .catchError((Object e) {
+      if (e is CameraException) {
+        switch (e.code) {
+          case 'CameraAccessDenied':
+            print("CameraController Error : CameraAccessDenied");
+            // Handle access errors here.
+            break;
+          default:
+            print("CameraController Error");
+            // Handle other errors here.
+            break;
+        }
+      }
+    });*/
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    //setCamera(isFront);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   var _index = 0; // 페이지 인덱스 0, 1
 
   @override
@@ -53,8 +125,21 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Column(
         children: <Widget>[
           Center(
-              child: CameraScreen()
-            ),
+              child: FutureBuilder<void>(
+            future: _initializeControllerFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.done) {
+                // _controller가 초기화된 경우에만 CameraPreview을 반환
+                return CameraScreen(_controller);
+              } else if (snapshot.hasError) {
+                // 에러 처리
+                return Text("Error: ${snapshot.error}");
+              } else {
+                // 로딩 중
+                return Center(child: CircularProgressIndicator());
+              }
+            },
+          )),
           SizedBox(height: 45),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -80,7 +165,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 icon: Image.asset('assets/images/turn_around.png',
                     width: 50, height: 50),
                 onPressed: () {
-                  CameraScreen.of(context)?.switchCamera();
+                  //CameraScreen.of(context)?._switchCamera();
+                  isFront = !isFront;
+                  setCamera(isFront);
                 },
               ),
             ],
